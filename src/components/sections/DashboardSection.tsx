@@ -2,14 +2,13 @@ import { WalletOverview } from "@/components/WalletOverview";
 import { InteractiveChart } from "@/components/InteractiveChart";
 import { PaymentChannelCard } from "@/components/PaymentChannelCard";
 import { TransactionTable } from "@/components/TransactionTable";
-import { SegmentSelector } from "@/components/SegmentSelector";
-import { SegmentBadge } from "@/components/SegmentBadge";
+import { GlobalSearch } from "@/components/GlobalSearch";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { RecentActivityPanel } from "@/components/RecentActivityPanel";
 import { useWallet } from "@/hooks/useWallet";
-import { useCustomerSegment } from "@/hooks/useCustomerSegment";
 
 export const DashboardSection = () => {
   const { wallets, transactions: walletTransactions, getTotalValue } = useWallet();
-  const { selectedSegment, isSegmentSelected, setSegment } = useCustomerSegment();
 
   // Convert wallet data for WalletOverview component
   const walletData = {
@@ -114,37 +113,20 @@ export const DashboardSection = () => {
         }
       ];
 
-  if (!isSegmentSelected) {
-    return (
-      <div className="space-y-6 animate-fade-in">
-        <SegmentSelector 
-          selectedSegment={null} 
-          onSegmentSelect={setSegment} 
-        />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Header with Search Bar */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">
-              Universal Pay Dashboard
-              {selectedSegment && (
-                <SegmentBadge 
-                  segments={[selectedSegment.id]} 
-                  className="ml-3" 
-                />
-              )}
-            </h1>
+            <h1 className="text-3xl font-bold mb-2">Universal Pay Dashboard</h1>
             <p className="text-muted-foreground">
-              {selectedSegment 
-                ? `${selectedSegment.description} - Monitor your tailored payment platform`
-                : "Monitor your API-only universal payment platform with real-time analytics"
-              }
+              Monitor your universal payment platform with real-time analytics and performance data
             </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <GlobalSearch />
+            <NotificationCenter />
           </div>
         </div>
       </div>
@@ -169,6 +151,9 @@ export const DashboardSection = () => {
           ))}
         </div>
       </div>
+
+      {/* Recent Activity Panel */}
+      <RecentActivityPanel />
 
       {/* Transactions Table */}
       <TransactionTable transactions={tableTransactions} />

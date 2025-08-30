@@ -5,6 +5,7 @@ import { TransactionTable } from "@/components/TransactionTable";
 import { GlobalSearch } from "@/components/GlobalSearch";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { RecentActivityPanel } from "@/components/RecentActivityPanel";
+import { Card, CardContent } from "@/components/ui/card";
 import { useWallet } from "@/hooks/useWallet";
 
 export const DashboardSection = () => {
@@ -142,13 +143,57 @@ export const DashboardSection = () => {
         />
       </div>
 
-      {/* Payment Channels Grid */}
+      {/* Market Insights & Currency Rates */}
       <div>
-        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Payment Channels</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-          {paymentChannels.map((channel, index) => (
-            <PaymentChannelCard key={index} {...channel} />
-          ))}
+        <h2 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Market Insights & Exchange Rates</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">USD/EUR</p>
+                  <p className="text-lg font-semibold">1.0825</p>
+                </div>
+                <div className="text-green-600 text-sm">+0.32%</div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">USD/GBP</p>
+                  <p className="text-lg font-semibold">0.7945</p>
+                </div>
+                <div className="text-red-600 text-sm">-0.18%</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">BTC/USD</p>
+                  <p className="text-lg font-semibold">$43,750</p>
+                </div>
+                <div className="text-green-600 text-sm">+2.45%</div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">ETH/USD</p>
+                  <p className="text-lg font-semibold">$2,485</p>
+                </div>
+                <div className="text-green-600 text-sm">+1.87%</div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 

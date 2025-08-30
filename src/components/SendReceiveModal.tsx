@@ -281,6 +281,25 @@ export const SendReceiveModal = ({ isOpen, onClose, mode, defaultCurrency = 'USD
               {channel === 'mobile_money' && (
                 <div className="space-y-3">
                   <div>
+                    <Label>Mobile Money Provider</Label>
+                    <Select value={destinationCurrency} onValueChange={setDestinationCurrency}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="MPESA_KE">M-Pesa (Kenya)</SelectItem>
+                        <SelectItem value="MPESA_TZ">M-Pesa (Tanzania)</SelectItem>
+                        <SelectItem value="MTN_UG">MTN Mobile Money (Uganda)</SelectItem>
+                        <SelectItem value="MTN_GH">MTN Mobile Money (Ghana)</SelectItem>
+                        <SelectItem value="AIRTEL_UG">Airtel Money (Uganda)</SelectItem>
+                        <SelectItem value="AIRTEL_KE">Airtel Money (Kenya)</SelectItem>
+                        <SelectItem value="TIGO_TZ">Tigo Pesa (Tanzania)</SelectItem>
+                        <SelectItem value="ORANGE_CI">Orange Money (Côte d'Ivoire)</SelectItem>
+                        <SelectItem value="WAVE_SN">Wave (Senegal)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label>Mobile Money Number</Label>
                     <Input 
                       placeholder="+254 712 XXX XXX"
@@ -288,15 +307,17 @@ export const SendReceiveModal = ({ isOpen, onClose, mode, defaultCurrency = 'USD
                       onChange={(e) => setRecipient(e.target.value)}
                     />
                   </div>
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <div className="flex items-center gap-2 text-blue-700">
-                      <Info className="h-4 w-4" />
-                      <span className="text-sm font-medium">M-Pesa (Kenya) Detected</span>
+                  {destinationCurrency && (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 text-blue-700">
+                        <Info className="h-4 w-4" />
+                        <span className="text-sm font-medium">{destinationCurrency.replace('_', ' - ')} Selected</span>
+                      </div>
+                      <p className="text-xs text-blue-600 mt-1">
+                        Funds will be delivered via {destinationCurrency.split('_')[0]} mobile money
+                      </p>
                     </div>
-                    <p className="text-xs text-blue-600 mt-1">
-                      Funds will be delivered via Safaricom M-Pesa
-                    </p>
-                  </div>
+                  )}
                 </div>
               )}
 
@@ -370,7 +391,7 @@ export const SendReceiveModal = ({ isOpen, onClose, mode, defaultCurrency = 'USD
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-background border shadow-lg z-50">
                         {wallets.map((wallet) => (
                           <SelectItem key={wallet.currency} value={wallet.currency}>
                             <div className="flex items-center justify-between w-full">
@@ -383,6 +404,9 @@ export const SendReceiveModal = ({ isOpen, onClose, mode, defaultCurrency = 'USD
                         ))}
                       </SelectContent>
                     </Select>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      Available: {availableBalance.toFixed(4)} {currency}
+                    </div>
                   </div>
                 </div>
 

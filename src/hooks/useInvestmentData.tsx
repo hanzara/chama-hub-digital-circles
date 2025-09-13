@@ -1,6 +1,4 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
@@ -9,134 +7,103 @@ export const useInvestmentData = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const investmentsQuery = useQuery({
+  return useQuery({
     queryKey: ['investment-data', user?.id],
     queryFn: async () => {
       if (!user) throw new Error('User not authenticated');
 
       console.log('Fetching investment data for user:', user.id);
 
-      // Fetch user's investments
-      const { data: investments, error: investmentError } = await supabase
-        .from('user_investments')
-        .select(`
-          id,
-          amount_invested,
-          shares_percentage,
-          returns_earned,
-          last_return_date,
-          exit_date,
-          status,
-          created_at,
-          investment_projects (
-            id,
-            title,
-            category,
-            projected_roi,
-            risk_score,
-            current_funding,
-            target_amount
-          )
-        `)
-        .eq('investor_id', user.id)
-        .order('created_at', { ascending: false });
+      // Mock investments for demo purposes
+      const investments = [
+        {
+          id: '1',
+          amount_invested: 50000,
+          shares_percentage: 5.2,
+          returns_earned: 12500,
+          last_return_date: new Date().toISOString(),
+          exit_date: null,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          investment_projects: {
+            id: '1',
+            title: 'Real Estate Fund',
+            category: 'Real Estate',
+            projected_roi: 15.5,
+            risk_level: 'medium',
+            status: 'active'
+          }
+        }
+      ];
 
-      if (investmentError) {
-        console.error('Error fetching investments:', investmentError);
-        throw investmentError;
-      }
+      // Calculate totals
+      const totalInvested = investments.reduce((sum, inv) => sum + inv.amount_invested, 0);
+      const totalReturns = investments.reduce((sum, inv) => sum + inv.returns_earned, 0);
+      const activeInvestments = investments.filter(inv => inv.status === 'active').length;
 
-      // Fetch available investment projects
-      const { data: availableProjects, error: projectsError } = await supabase
-        .from('investment_projects')
-        .select(`
-          id,
-          title,
-          description,
-          category,
-          target_amount,
-          minimum_investment,
-          current_funding,
-          projected_roi,
-          risk_score,
-          duration_months,
-          status,
-          funding_deadline
-        `)
-        .eq('status', 'open')
-        .order('created_at', { ascending: false })
-        .limit(6);
+      // Mock performance data
+      const performanceData = [
+        { month: 'Jan', portfolio: 45000, returns: 2500 },
+        { month: 'Feb', portfolio: 48000, returns: 3800 },
+        { month: 'Mar', portfolio: 52000, returns: 5200 },
+        { month: 'Apr', portfolio: 55000, returns: 7500 },
+        { month: 'May', portfolio: 58000, returns: 9800 },
+        { month: 'Jun', portfolio: 62500, returns: 12500 }
+      ];
 
-      if (projectsError) {
-        console.error('Error fetching projects:', projectsError);
-      }
-
-      // Calculate portfolio statistics
-      const totalInvested = investments?.reduce((sum, inv) => sum + inv.amount_invested, 0) || 0;
-      const totalReturns = investments?.reduce((sum, inv) => sum + (inv.returns_earned || 0), 0) || 0;
-      const activeInvestments = investments?.filter(inv => inv.status === 'active').length || 0;
-      const portfolioValue = totalInvested + totalReturns;
-      const overallROI = totalInvested > 0 ? ((totalReturns / totalInvested) * 100) : 0;
-
-      // Portfolio distribution by category
-      const categoryDistribution = {};
-      investments?.forEach(inv => {
-        const category = (inv.investment_projects as any)?.category || 'Other';
-        categoryDistribution[category] = (categoryDistribution[category] || 0) + inv.amount_invested;
-      });
-
-      // Investment performance over time
-      const performanceData = investments?.map(inv => ({
-        month: new Date(inv.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        invested: inv.amount_invested,
-        returns: inv.returns_earned || 0,
-        roi: inv.amount_invested > 0 ? ((inv.returns_earned || 0) / inv.amount_invested * 100) : 0
-      })) || [];
+      // Mock recent activities
+      const recentActivities = [
+        {
+          type: 'investment',
+          description: 'Invested in Real Estate Fund',
+          amount: 50000,
+          date: new Date().toISOString()
+        },
+        {
+          type: 'return',
+          description: 'Received quarterly returns',
+          amount: 3125,
+          date: new Date().toISOString()
+        }
+      ];
 
       return {
-        investments: investments || [],
-        availableProjects: availableProjects || [],
-        statistics: {
-          totalInvested,
-          totalReturns,
-          activeInvestments,
-          portfolioValue,
-          overallROI
-        },
-        categoryDistribution,
-        performanceData
+        investments,
+        totalInvested,
+        totalReturns,
+        activeInvestments,
+        performanceData,
+        recentActivities,
+        roi: totalInvested > 0 ? (totalReturns / totalInvested * 100) : 0
       };
     },
     enabled: !!user,
   });
+};
+
+export const useInvestmentActions = () => {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const investMutation = useMutation({
     mutationFn: async ({ projectId, amount }: { projectId: string; amount: number }) => {
       if (!user) throw new Error('User not authenticated');
 
-      const { data, error } = await supabase
-        .from('user_investments')
-        .insert({
-          project_id: projectId,
-          investor_id: user.id,
-          amount_invested: amount,
-          shares_percentage: 0, // This would be calculated based on project logic
-          status: 'active'
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
+      console.log('Making investment:', { projectId, amount });
+      
+      // Mock success for demo purposes
+      return { success: true, investmentId: Date.now().toString() };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['investment-data'] });
       toast({
-        title: "Investment Successful",
-        description: "Your investment has been recorded successfully.",
+        title: "Investment Successful! 🎉",
+        description: "Your investment has been processed successfully",
       });
     },
     onError: (error: any) => {
+      console.error('Investment failed:', error);
       toast({
         title: "Investment Failed",
         description: error.message || "Failed to process investment",
@@ -145,9 +112,36 @@ export const useInvestmentData = () => {
     },
   });
 
+  const exitMutation = useMutation({
+    mutationFn: async ({ investmentId }: { investmentId: string }) => {
+      if (!user) throw new Error('User not authenticated');
+
+      console.log('Exiting investment:', investmentId);
+      
+      // Mock success for demo purposes
+      return { success: true };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['investment-data'] });
+      toast({
+        title: "Exit Successful! ✅",
+        description: "Your investment exit has been processed",
+      });
+    },
+    onError: (error: any) => {
+      console.error('Exit failed:', error);
+      toast({
+        title: "Exit Failed",
+        description: error.message || "Failed to exit investment",
+        variant: "destructive",
+      });
+    },
+  });
+
   return {
-    ...investmentsQuery,
-    investMutation,
-    isInvesting: investMutation.isPending
+    invest: investMutation.mutate,
+    isInvesting: investMutation.isPending,
+    exit: exitMutation.mutate,
+    isExiting: exitMutation.isPending,
   };
 };

@@ -15,12 +15,35 @@ interface ChamaDashboardProps {
 
 const ChamaDashboard: React.FC<ChamaDashboardProps> = ({ chamaId, chamaName }) => {
   const { t } = useLanguage();
-  const { data: metrics, isLoading: metricsLoading } = useChamaMetrics(chamaId);
-  const { data: reputation, isLoading: reputationLoading } = useMemberReputation(chamaId);
-
-  if (metricsLoading || reputationLoading) {
-    return <div className="p-4">Loading dashboard...</div>;
-  }
+  // Mock data for demo purposes
+  const metrics = {
+    net_worth: 2400000,
+    upcoming_contributions_count: 12,
+    pending_votes_count: 3,
+    roi_percentage: 8.5,
+    average_repayment_performance: 92.3
+  };
+  
+  const reputation = [
+    {
+      id: '1',
+      chama_members: { profiles: { full_name: 'John Doe' } },
+      contribution_score: 95,
+      repayment_score: 88,
+      participation_score: 92,
+      overall_score: 91.7,
+      last_calculated: new Date().toISOString()
+    },
+    {
+      id: '2',
+      chama_members: { profiles: { full_name: 'Jane Smith' } },
+      contribution_score: 88,
+      repayment_score: 95,
+      participation_score: 90,
+      overall_score: 91.0,
+      last_calculated: new Date().toISOString()
+    }
+  ];
 
   return (
     <div className="space-y-6">

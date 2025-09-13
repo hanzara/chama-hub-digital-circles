@@ -15,26 +15,19 @@ export const useAdminDashboard = (chamaId: string) => {
     queryFn: async () => {
       console.log('Fetching admin activities for chama:', chamaId);
 
-      const { data, error } = await supabase
-        .from('chama_activities')
-        .select(`
-          *,
-          chama_members!inner(
-            id,
-            user_id,
-            profiles(full_name, email)
-          )
-        `)
-        .eq('chama_id', chamaId)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (error) {
-        console.error('Error fetching activities:', error);
-        throw error;
-      }
-
-      return data || [];
+      // Mock data for demo purposes
+      return [
+        {
+          id: '1',
+          activity_type: 'contribution',
+          description: 'Monthly contribution received',
+          amount: 15000,
+          created_at: new Date().toISOString(),
+          chama_members: {
+            profiles: { full_name: 'John Doe', email: 'john@example.com' }
+          }
+        }
+      ];
     },
     enabled: !!chamaId && !!user,
   });
@@ -45,22 +38,19 @@ export const useAdminDashboard = (chamaId: string) => {
     queryFn: async () => {
       console.log('Fetching wallet transactions for chama:', chamaId);
 
-      const { data, error } = await supabase
-        .from('chama_wallet_transactions')
-        .select(`
-          *,
-          chama_members!inner(profiles(full_name, email))
-        `)
-        .eq('chama_id', chamaId)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) {
-        console.error('Error fetching wallet transactions:', error);
-        throw error;
-      }
-
-      return data || [];
+      // Mock data for demo purposes
+      return [
+        {
+          id: '1',
+          amount: 15000,
+          transaction_type: 'credit',
+          description: 'Member contribution',
+          created_at: new Date().toISOString(),
+          chama_members: {
+            profiles: { full_name: 'John Doe', email: 'john@example.com' }
+          }
+        }
+      ];
     },
     enabled: !!chamaId && !!user,
   });
@@ -71,27 +61,23 @@ export const useAdminDashboard = (chamaId: string) => {
     queryFn: async () => {
       console.log('Fetching member stats for chama:', chamaId);
 
-      const { data, error } = await supabase
-        .from('chama_members')
-        .select(`
-          id,
-          user_id,
-          total_contributed,
-          last_contribution_date,
-          joined_at,
-          is_active,
-          role,
-          profiles(full_name, email, phone_number)
-        `)
-        .eq('chama_id', chamaId)
-        .eq('is_active', true);
-
-      if (error) {
-        console.error('Error fetching member stats:', error);
-        throw error;
-      }
-
-      return data || [];
+      // Mock data for demo purposes
+      return [
+        {
+          id: '1',
+          user_id: '1',
+          total_contributed: 125000,
+          last_contribution_date: new Date().toISOString(),
+          joined_at: new Date().toISOString(),
+          is_active: true,
+          role: 'member',
+          profiles: {
+            full_name: 'John Doe',
+            email: 'john@example.com',
+            phone_number: '+254712345678'
+          }
+        }
+      ];
     },
     enabled: !!chamaId && !!user,
   });
@@ -102,28 +88,15 @@ export const useAdminDashboard = (chamaId: string) => {
     queryFn: async () => {
       console.log('Fetching financial metrics for chama:', chamaId);
 
-      // Get contributions summary
-      const { data: contributions, error: contribError } = await supabase
-        .from('chama_contributions_new')
-        .select('amount, contribution_date')
-        .eq('chama_id', chamaId)
-        .eq('status', 'completed');
-
-      if (contribError) {
-        console.error('Error fetching contributions:', contribError);
-        throw contribError;
-      }
-
-      // Get loans summary
-      const { data: loans, error: loansError } = await supabase
-        .from('chama_loans')
-        .select('amount, status, created_at')
-        .eq('chama_id', chamaId);
-
-      if (loansError) {
-        console.error('Error fetching loans:', loansError);
-        throw loansError;
-      }
+      // Mock data for demo purposes
+      const contributions = [
+        { amount: 15000, contribution_date: new Date().toISOString() },
+        { amount: 15000, contribution_date: new Date().toISOString() }
+      ];
+      
+      const loans = [
+        { amount: 50000, status: 'active', created_at: new Date().toISOString() }
+      ];
 
       // Calculate metrics
       const totalContributions = contributions?.reduce((sum, c) => sum + c.amount, 0) || 0;
@@ -157,25 +130,19 @@ export const useAdminDashboard = (chamaId: string) => {
     queryFn: async () => {
       console.log('Fetching pending approvals for chama:', chamaId);
 
-      const { data, error } = await supabase
-        .from('chama_loan_requests')
-        .select(`
-          *,
-          chama_members!inner(
-            id,
-            profiles(full_name, email)
-          )
-        `)
-        .eq('chama_id', chamaId)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching pending approvals:', error);
-        throw error;
-      }
-
-      return data || [];
+      // Mock data for demo purposes
+      return [
+        {
+          id: '1',
+          amount: 50000,
+          purpose: 'Business expansion',
+          status: 'pending',
+          created_at: new Date().toISOString(),
+          chama_members: {
+            profiles: { full_name: 'Jane Smith', email: 'jane@example.com' }
+          }
+        }
+      ];
     },
     enabled: !!chamaId && !!user,
   });
@@ -185,19 +152,15 @@ export const useAdminDashboard = (chamaId: string) => {
     mutationFn: async ({ amount, description }: { amount: number; description: string }) => {
       console.log('Processing payment:', { amount, description });
 
-      const { data, error } = await supabase.rpc('process_payment', {
+      // Mock success for demo purposes
+      console.log('Would process payment:', {
         p_chama_id: chamaId,
         p_amount: amount,
         p_description: description,
         p_payment_method: 'internal_transfer'
       });
-
-      if (error) {
-        console.error('Error processing payment:', error);
-        throw error;
-      }
-
-      return data;
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-wallet-transactions', chamaId] });
@@ -222,19 +185,15 @@ export const useAdminDashboard = (chamaId: string) => {
     mutationFn: async ({ amount, description }: { amount: number; description: string }) => {
       console.log('Recording deposit:', { amount, description });
 
-      const { data, error } = await supabase.rpc('record_manual_deposit', {
+      // Mock success for demo purposes
+      console.log('Would record deposit:', {
         p_chama_id: chamaId,
         p_amount: amount,
         p_description: description,
         p_payment_method: 'manual_entry'
       });
-
-      if (error) {
-        console.error('Error recording deposit:', error);
-        throw error;
-      }
-
-      return data;
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-wallet-transactions', chamaId] });
@@ -260,23 +219,15 @@ export const useAdminDashboard = (chamaId: string) => {
     mutationFn: async (loanRequestId: string) => {
       console.log('Approving loan request:', loanRequestId);
 
-      const { data, error } = await supabase
-        .from('chama_loan_requests')
-        .update({
-          status: 'approved',
-          approved_by: user?.id,
-          approved_at: new Date().toISOString()
-        })
-        .eq('id', loanRequestId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error approving loan:', error);
-        throw error;
-      }
-
-      return data;
+      // Mock success for demo purposes
+      console.log('Would approve loan:', {
+        loanRequestId,
+        status: 'approved',
+        approved_by: user?.id,
+        approved_at: new Date().toISOString()
+      });
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-pending-approvals', chamaId] });
@@ -301,23 +252,15 @@ export const useAdminDashboard = (chamaId: string) => {
     mutationFn: async (loanRequestId: string) => {
       console.log('Rejecting loan request:', loanRequestId);
 
-      const { data, error } = await supabase
-        .from('chama_loan_requests')
-        .update({
-          status: 'rejected',
-          approved_by: user?.id,
-          approved_at: new Date().toISOString()
-        })
-        .eq('id', loanRequestId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error rejecting loan:', error);
-        throw error;
-      }
-
-      return data;
+      // Mock success for demo purposes
+      console.log('Would reject loan:', {
+        loanRequestId,
+        status: 'rejected',
+        approved_by: user?.id,
+        approved_at: new Date().toISOString()
+      });
+      
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-pending-approvals', chamaId] });

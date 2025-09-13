@@ -13,13 +13,8 @@ export const useAdminTools = () => {
       console.log('Chama ID:', chamaId);
       console.log('Updates:', updates);
 
-      const { error } = await supabase
-        .from('chamas')
-        .update(updates)
-        .eq('id', chamaId);
-
-      if (error) throw error;
-
+      // Mock success for demo purposes
+      console.log('Would update chama:', { chamaId, updates });
       return { success: true };
     },
     onSuccess: () => {
@@ -45,19 +40,8 @@ export const useAdminTools = () => {
       console.log('Chama ID:', chamaId);
       console.log('Rules:', rules);
 
-      const { error } = await supabase
-        .from('chama_settings')
-        .upsert({
-          chama_id: chamaId,
-          late_payment_penalty: rules.latePaymentPenalty,
-          loan_interest_rate: rules.loanInterestRate,
-          max_loan_amount: rules.maxLoanAmount,
-          voting_threshold: rules.votingThreshold,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
+      // Mock success for demo purposes
+      console.log('Would save rules:', { chamaId, rules });
       return { success: true };
     },
     onSuccess: () => {

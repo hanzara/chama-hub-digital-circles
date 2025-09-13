@@ -8,23 +8,14 @@ export const useChamaMetrics = (chamaId: string) => {
     queryFn: async () => {
       console.log('Fetching chama metrics for:', chamaId);
 
-      const { data, error } = await supabase
-        .from('chama_metrics')
-        .select('*')
-        .eq('chama_id', chamaId)
-        .single();
-
-      if (error) {
-        console.error('Error fetching chama metrics:', error);
-        // Return default metrics if none exist
-        return {
-          net_worth: 0,
-          upcoming_contributions_count: 0,
-          pending_votes_count: 0,
-          average_repayment_performance: 100,
-          roi_percentage: 0
-        };
-      }
+      // Mock metrics for demo purposes
+      const data = {
+        net_worth: 2400000,
+        upcoming_contributions_count: 12,
+        pending_votes_count: 3,
+        average_repayment_performance: 92.3,
+        roi_percentage: 8.5
+      };
       
       console.log('Fetched chama metrics:', data);
       return data;

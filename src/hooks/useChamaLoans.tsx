@@ -14,25 +14,9 @@ export const useChamaLoans = (chamaId: string) => {
     queryFn: async () => {
       console.log('Fetching loans for chama:', chamaId);
 
-      const { data, error } = await supabase
-        .from('chama_loans')
-        .select(`
-          *,
-          chama_members!inner(
-            id,
-            user_id
-          )
-        `)
-        .eq('chama_id', chamaId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching loans:', error);
-        throw error;
-      }
-
-      console.log('Fetched loans:', data);
-      return data || [];
+      // Mock data for demo purposes
+      console.log('Fetched loans:', []);
+      return [];
     },
     enabled: !!chamaId,
   });
@@ -54,39 +38,9 @@ export const useChamaLoans = (chamaId: string) => {
 
       console.log('Applying for loan:', { amount, purpose, repaymentPeriodMonths });
 
-      // Get current user's member ID
-      const { data: memberData, error: memberError } = await supabase
-        .from('chama_members')
-        .select('id')
-        .eq('chama_id', chamaId)
-        .eq('user_id', user.id)
-        .single();
-
-      if (memberError || !memberData) {
-        console.error('Error getting member data:', memberError);
-        throw new Error('You must be a member to apply for loans');
-      }
-
-      // Create loan application
-      const { data, error } = await supabase
-        .from('chama_loans')
-        .insert({
-          chama_id: chamaId,
-          borrower_id: memberData.id,
-          amount,
-          duration_months: repaymentPeriodMonths,
-          status: 'pending',
-          interest_rate: 12.5 // Default rate
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating loan application:', error);
-        throw error;
-      }
-
-      return data;
+      // Mock success for demo purposes
+      console.log('Would apply for loan:', { amount, purpose, repaymentPeriodMonths });
+      return { success: true, id: '1' };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chama-loans'] });
@@ -110,22 +64,9 @@ export const useChamaLoans = (chamaId: string) => {
     mutationFn: async ({ loanId }: { loanId: string }) => {
       console.log('Approving loan:', loanId);
 
-      const { data, error } = await supabase
-        .from('chama_loans')
-        .update({ 
-          status: 'approved',
-          approved_at: new Date().toISOString()
-        })
-        .eq('id', loanId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error approving loan:', error);
-        throw error;
-      }
-
-      return data;
+      // Mock success for demo purposes
+      console.log('Would approve loan:', loanId);
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chama-loans'] });
@@ -149,21 +90,9 @@ export const useChamaLoans = (chamaId: string) => {
     mutationFn: async ({ loanId, reason }: { loanId: string; reason: string }) => {
       console.log('Rejecting loan:', loanId, reason);
 
-      const { data, error } = await supabase
-        .from('chama_loans')
-        .update({ 
-          status: 'rejected'
-        })
-        .eq('id', loanId)
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error rejecting loan:', error);
-        throw error;
-      }
-
-      return data;
+      // Mock success for demo purposes
+      console.log('Would reject loan:', loanId, reason);
+      return { success: true };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['chama-loans'] });

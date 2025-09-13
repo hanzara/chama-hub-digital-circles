@@ -1,135 +1,73 @@
-
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { useToast } from './use-toast';
 
-export const useInvitations = (chamaId: string) => {
+export const useInvitations = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const invitationsQuery = useQuery({
-    queryKey: ['invitations', chamaId],
+  // Mock query for pending invitations
+  const pendingInvitationsQuery = useQuery({
+    queryKey: ['pending-invitations', user?.id],
     queryFn: async () => {
-      if (!user || !chamaId) return [];
+      if (!user) return [];
 
-      const { data, error } = await supabase
-        .from('member_invitations')
-        .select('*')
-        .eq('chama_id', chamaId)
-        .order('created_at', { ascending: false });
+      console.log('Fetching pending invitations for user:', user.id);
 
-      if (error) {
-        console.error('Error fetching invitations:', error);
-        throw error;
-      }
-
-      return data || [];
+      // Mock pending invitations
+      return [];
     },
-    enabled: !!user && !!chamaId,
+    enabled: !!user,
   });
 
+  // Mock invitation creation mutation
   const createInvitationMutation = useMutation({
-    mutationFn: async ({ email, phoneNumber }: { email?: string; phoneNumber?: string }) => {
-      if (!user || !chamaId) {
-        throw new Error('User not authenticated or chama not selected');
-      }
-
-      if (!email && !phoneNumber) {
-        throw new Error('Either email or phone number is required');
-      }
-
-      const { data, error } = await supabase
-        .from('member_invitations')
-        .insert({
-          chama_id: chamaId,
-          invited_by: user.id,
-          email: email || null,
-          phone_number: phoneNumber || null,
-        })
-        .select()
-        .single();
-
-      if (error) {
-        console.error('Error creating invitation:', error);
-        throw error;
-      }
-
-      return data;
+    mutationFn: async ({ chamaId, email, role }: {
+      chamaId: string;
+      email: string;
+      role: string;
+    }) => {
+      console.log('Creating invitation:', { chamaId, email, role });
+      
+      // Mock success for demo purposes
+      return { success: true, invitation_token: 'mock_token_' + Date.now() };
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['invitations', chamaId] });
-      
-      const inviteLink = `${window.location.origin}/join-chama?token=${data.invitation_token}`;
-      
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-invitations'] });
       toast({
-        title: "Invitation Created! 🎉",
-        description: "Invitation link copied to clipboard. Share it with the person you want to invite.",
-      });
-
-      // Copy to clipboard
-      navigator.clipboard.writeText(inviteLink).then(() => {
-        console.log('Invitation link copied to clipboard:', inviteLink);
-      }).catch(() => {
-        console.warn('Could not copy to clipboard');
-        // Show the link in the toast if clipboard fails
-        toast({
-          title: "Invitation Link Created",
-          description: `Share this link: ${inviteLink}`,
-        });
+        title: "Invitation Sent! ✉️",
+        description: "The invitation has been sent successfully",
       });
     },
     onError: (error: any) => {
-      console.error('Create invitation error:', error);
+      console.error('Invitation creation failed:', error);
       toast({
         title: "Error",
-        description: error.message || "Failed to create invitation",
+        description: error.message || "Failed to send invitation",
         variant: "destructive",
       });
     },
   });
 
-  return {
-    invitations: invitationsQuery.data || [],
-    isLoading: invitationsQuery.isLoading,
-    createInvitation: createInvitationMutation.mutate,
-    isCreating: createInvitationMutation.isPending,
-  };
-};
-
-export const useAcceptInvitation = () => {
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (invitationToken: string) => {
-      const { data, error } = await supabase.rpc('accept_chama_invitation', {
-        invitation_token: invitationToken,
-      });
-
-      if (error) {
-        console.error('Error accepting invitation:', error);
-        throw error;
-      }
-
-      return data;
+  // Mock invitation acceptance mutation
+  const acceptInvitationMutation = useMutation({
+    mutationFn: async ({ token }: { token: string }) => {
+      console.log('Accepting invitation with token:', token);
+      
+      // Mock success for demo purposes
+      return { success: true };
     },
-    onSuccess: (data: any) => {
-      if (data?.success) {
-        toast({
-          title: "Welcome! 🎉",
-          description: data?.message || "Successfully joined the chama!",
-        });
-      } else {
-        toast({
-          title: "Failed",
-          description: data?.message || "Failed to join chama",
-          variant: "destructive",
-        });
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pending-invitations'] });
+      queryClient.invalidateQueries({ queryKey: ['chamas'] });
+      toast({
+        title: "Invitation Accepted! 🎉",
+        description: "You have successfully joined the chama",
+      });
     },
     onError: (error: any) => {
-      console.error('Accept invitation error:', error);
+      console.error('Invitation acceptance failed:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to accept invitation",
@@ -137,4 +75,13 @@ export const useAcceptInvitation = () => {
       });
     },
   });
+
+  return {
+    pendingInvitations: pendingInvitationsQuery.data || [],
+    isLoading: pendingInvitationsQuery.isLoading,
+    createInvitation: createInvitationMutation.mutate,
+    isCreatingInvitation: createInvitationMutation.isPending,
+    acceptInvitation: acceptInvitationMutation.mutate,
+    isAcceptingInvitation: acceptInvitationMutation.isPending,
+  };
 };

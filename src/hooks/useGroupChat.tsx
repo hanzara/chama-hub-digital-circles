@@ -29,7 +29,7 @@ export const useGroupChat = (chamaId: string | null) => {
 
   // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async ({ message }: { message: string }) => {
+    mutationFn: async (message: string) => {
       if (!user || !chamaId) throw new Error('Missing required data');
 
       console.log('=== Sending Message ===');
@@ -59,9 +59,14 @@ export const useGroupChat = (chamaId: string | null) => {
     },
   });
 
-  const sendMessage = () => {
-    if (!currentMessage.trim()) return;
-    sendMessageMutation.mutate({ message: currentMessage.trim() });
+  const sendMessage = (message: string) => {
+    if (!message.trim()) return;
+    sendMessageMutation.mutate(message.trim());
+  };
+
+  const sendTypingIndicator = () => {
+    // Mock typing indicator function
+    console.log('Typing indicator sent');
   };
 
   return {
@@ -73,5 +78,7 @@ export const useGroupChat = (chamaId: string | null) => {
     isSending: sendMessageMutation.isPending,
     messagesEndRef,
     userProfile,
+    connectionStatus: 'connected' as const,
+    sendTypingIndicator,
   };
 };

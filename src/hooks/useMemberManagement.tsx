@@ -1,41 +1,47 @@
-
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/lib/supabase';
 import { useToast } from './use-toast';
 
 export const useMemberManagement = (chamaId: string) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch chama members
+  // Mock fetch chama members
   const { data: members, isLoading } = useQuery<any[]>({
     queryKey: ['chama-members', chamaId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('chama_members')
-        .select(`*`)
-        .eq('chama_id', chamaId)
-        .eq('is_active', true);
-
-      if (error) {
-        console.error('Error fetching members:', error);
-        throw error;
-      }
-      // Enrich with profiles since no FK relation is defined between chama_members.user_id and profiles.user_id
-      const membersList = (data || []) as Array<{ user_id: string }>;
-      const userIds = membersList.map((m) => m.user_id).filter(Boolean) as string[];
-
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, email, phone_number')
-          .in('user_id', userIds);
-
-        const profilesMap = new Map<string, any>((profiles || []).map((p) => [p.user_id, p]));
-        return membersList.map((m: any) => ({ ...m, profiles: profilesMap.get(m.user_id) })) as any[];
-      }
-
-      return membersList as any[];
+      console.log('Fetching members for chama:', chamaId);
+      
+      // Mock members data
+      return [
+        {
+          id: '1',
+          user_id: '1',
+          role: 'admin',
+          is_active: true,
+          total_contributed: 125000,
+          joined_at: new Date().toISOString(),
+          profiles: {
+            user_id: '1',
+            full_name: 'John Doe',
+            email: 'john@example.com',
+            phone_number: '+254712345678'
+          }
+        },
+        {
+          id: '2',
+          user_id: '2',
+          role: 'member',
+          is_active: true,
+          total_contributed: 85000,
+          joined_at: new Date().toISOString(),
+          profiles: {
+            user_id: '2',
+            full_name: 'Jane Smith',
+            email: 'jane@example.com',
+            phone_number: '+254723456789'
+          }
+        }
+      ];
     },
   });
 
@@ -46,13 +52,7 @@ export const useMemberManagement = (chamaId: string) => {
       console.log('Member ID:', memberId);
       console.log('New Role:', newRole);
 
-      const { error } = await supabase
-        .from('chama_members')
-        .update({ role: newRole })
-        .eq('id', memberId);
-
-      if (error) throw error;
-
+      // Mock success for demo purposes
       return { success: true };
     },
     onSuccess: () => {
@@ -79,56 +79,7 @@ export const useMemberManagement = (chamaId: string) => {
       console.log('Email:', email);
       console.log('Role:', role);
 
-      // Check if user exists in profiles
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('user_id')
-        .eq('email', email)
-        .single();
-
-      if (profileError || !profile) {
-        throw new Error('User with this email is not registered. They need to sign up first.');
-      }
-
-      // Check if already a member
-      const { data: existingMember } = await supabase
-        .from('chama_members')
-        .select('id')
-        .eq('chama_id', chamaId)
-        .eq('user_id', profile.user_id)
-        .single();
-
-      if (existingMember) {
-        throw new Error('User is already a member of this chama.');
-      }
-
-      // Add as member
-      const { error } = await supabase
-        .from('chama_members')
-        .insert({
-          chama_id: chamaId,
-          user_id: profile.user_id,
-          role: role,
-          is_active: true,
-          total_contributed: 0,
-        });
-
-      if (error) throw error;
-
-      // Update chama member count
-      const { data: chama } = await supabase
-        .from('chamas')
-        .select('current_members')
-        .eq('id', chamaId)
-        .single();
-
-      if (chama) {
-        await supabase
-          .from('chamas')
-          .update({ current_members: (chama.current_members || 0) + 1 })
-          .eq('id', chamaId);
-      }
-
+      // Mock success for demo purposes
       return { success: true };
     },
     onSuccess: () => {

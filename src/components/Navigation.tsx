@@ -1,15 +1,7 @@
-
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-} from "@/components/ui/navigation-menu";
 import { useAuth } from '@/hooks/useAuth';
 import AuthModal from './AuthModal';
 import LanguageSelector from './LanguageSelector';
@@ -20,7 +12,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Home, Users, TrendingUp, Plus, LogOut, Bell, CreditCard, Vote, Smartphone, 
   ArrowLeftRight, Shield, Coins, Brain, Wallet, User, HelpCircle, 
-  ChevronDown, Target, BookOpen, MessageSquare, Building2, Settings, GamepadIcon, BarChart3
+  Target, BookOpen, MessageSquare, Building2, Settings, GamepadIcon, BarChart3,
+  Handshake, Lock, ChevronUp, ChevronDown, Calendar, DollarSign, ShieldCheck,
+  MessageCircle, PieChart, UserCheck
 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -33,9 +27,9 @@ const Navigation = () => {
   const location = useLocation();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('HOME');
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
-
   const isActive = (path: string) => location.pathname === path;
 
   const handleSignOut = async () => {
@@ -47,510 +41,484 @@ const Navigation = () => {
     }
   };
 
-  const navItemClass = (path: string) => 
-    `flex items-center gap-2 transition-colors ${isActive(path) 
-      ? 'text-primary' 
-      : 'text-muted-foreground hover:text-primary'
-    }`;
+  // Card component for grid items
+  const GridCard = ({ icon: Icon, title, subtitle, onClick, variant = "default", size = "default" }: {
+    icon: any;
+    title: string;
+    subtitle?: string;
+    onClick: () => void;
+    variant?: "default" | "primary" | "secondary" | "success";
+    size?: "default" | "large" | "small";
+  }) => {
+    const sizeClasses = {
+      large: "p-6 h-24 w-full",
+      default: "p-4 h-20 w-full",
+      small: "p-3 h-16 w-full"
+    };
+
+    const variantClasses = {
+      default: "bg-card hover:bg-accent",
+      primary: "bg-blue-500 hover:bg-blue-600 text-white",
+      secondary: "bg-green-500 hover:bg-green-600 text-white", 
+      success: "bg-orange-500 hover:bg-orange-600 text-white"
+    };
+
+    return (
+      <Button
+        variant="ghost"
+        onClick={onClick}
+        className={`${sizeClasses[size]} ${variantClasses[variant]} rounded-xl transition-all duration-200 hover:scale-105 flex flex-col items-center justify-center gap-1 border shadow-sm`}
+      >
+        <Icon className={`${size === 'small' ? 'h-4 w-4' : size === 'large' ? 'h-6 w-6' : 'h-5 w-5'}`} />
+        <span className={`font-medium ${size === 'small' ? 'text-xs' : 'text-sm'}`}>{title}</span>
+        {subtitle && <span className="text-xs opacity-75">{subtitle}</span>}
+      </Button>
+    );
+  };
+
+  // Render content based on active tab
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'HOME':
+        return (
+          <div className="space-y-6">
+            {/* Large Cards Row */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <GridCard
+                icon={Building2}
+                title="Bank Portal"
+                onClick={() => navigate('/bank-portal')}
+                variant="primary"
+                size="large"
+              />
+              <GridCard
+                icon={Handshake}
+                title="Partner Dashboard"
+                onClick={() => navigate('/partner-dashboard')}
+                variant="secondary"
+                size="large"
+              />
+              <GridCard
+                icon={Lock}
+                title="Admin Portal"
+                onClick={() => navigate('/admin-portal')}
+                variant="success"
+                size="large"
+              />
+            </div>
+
+            {/* Medium Icons Row */}
+            <div className="grid grid-cols-3 gap-4">
+              <GridCard
+                icon={TrendingUp}
+                title="Investment"
+                onClick={() => navigate('/investments')}
+              />
+              <GridCard
+                icon={ShieldCheck}
+                title="Smart Finance"
+                onClick={() => navigate('/smart-finance')}
+              />
+              <GridCard
+                icon={Users}
+                title="Community"
+                onClick={() => navigate('/community-hub')}
+              />
+            </div>
+
+            {/* Bottom Row */}
+            <div className="grid grid-cols-2 gap-4">
+              <GridCard
+                icon={HelpCircle}
+                title="Trivia Game"
+                onClick={() => navigate('/trivia-game')}
+              />
+              <GridCard
+                icon={BarChart3}
+                title="Analytics"
+                onClick={() => navigate('/analytics')}
+              />
+            </div>
+          </div>
+        );
+
+      case 'CHAMA':
+        return (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-center">Quick Action</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <GridCard
+                icon={Wallet}
+                title="MYCHAMA"
+                onClick={() => navigate('/chamas')}
+                size="large"
+              />
+              <GridCard
+                icon={Plus}
+                title="CREATE CHAMA"
+                onClick={() => navigate('/create-chama')}
+                size="large"
+              />
+              <GridCard
+                icon={UserCheck}
+                title="JOIN CHAMA"
+                onClick={() => navigate('/join-chama')}
+                size="large"
+              />
+              <GridCard
+                icon={Settings}
+                title="ADVANCED FEATURES"
+                onClick={() => navigate('/advanced-chama')}
+                size="large"
+              />
+            </div>
+          </div>
+        );
+
+      case 'ADVANCED_CHAMA':
+        return (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-center">Advanced Features</h2>
+            <div className="grid grid-cols-3 gap-3">
+              <GridCard
+                icon={BarChart3}
+                title="Dashboard"
+                onClick={() => navigate('/chama/dashboard')}
+                size="small"
+              />
+              <GridCard
+                icon={DollarSign}
+                title="Overview"
+                onClick={() => navigate('/chama/overview')}
+                size="small"
+              />
+              <GridCard
+                icon={Users}
+                title="Members"
+                onClick={() => navigate('/member-management')}
+                size="small"
+              />
+              <GridCard
+                icon={Coins}
+                title="Savings"
+                onClick={() => navigate('/savings-contributions')}
+                size="small"
+              />
+              <GridCard
+                icon={TrendingUp}
+                title="Loans"
+                onClick={() => navigate('/loan-management')}
+                size="small"
+              />
+              <GridCard
+                icon={ArrowLeftRight}
+                title="Invest"
+                onClick={() => navigate('/investment-tracking')}
+                size="small"
+              />
+              <GridCard
+                icon={Calendar}
+                title="Meetings"
+                onClick={() => navigate('/meetings-voting')}
+                size="small"
+              />
+              <GridCard
+                icon={DollarSign}
+                title="Expenses"
+                onClick={() => navigate('/expense-management')}
+                size="small"
+              />
+              <GridCard
+                icon={ShieldCheck}
+                title="Security"
+                onClick={() => navigate('/security-permissions')}
+                size="small"
+              />
+              <GridCard
+                icon={MessageSquare}
+                title="Community"
+                onClick={() => navigate('/community-education')}
+                size="small"
+              />
+              <GridCard
+                icon={MessageCircle}
+                title="Community"
+                onClick={() => navigate('/community-hub')}
+                size="small"
+              />
+              <GridCard
+                icon={MessageSquare}
+                title="Chat"
+                onClick={() => navigate('/group-chat')}
+                size="small"
+              />
+            </div>
+          </div>
+        );
+
+      case 'WALLET':
+        return (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-center">Smart Wallet</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <GridCard
+                icon={Wallet}
+                title="Smart Wallet"
+                subtitle="Digital wallet management"
+                onClick={() => navigate('/smart-wallet')}
+                size="large"
+              />
+              <GridCard
+                icon={Smartphone}
+                title="Mobile Money"
+                subtitle="M-Pesa integration"
+                onClick={() => navigate('/mobile-money')}
+                size="large"
+              />
+              <GridCard
+                icon={Coins}
+                title="Personal Savings"
+                subtitle="Track your savings"
+                onClick={() => navigate('/personal-savings')}
+                size="large"
+              />
+            </div>
+          </div>
+        );
+
+      case 'LOANS':
+        return (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-center">Loan Management</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <GridCard
+                icon={Plus}
+                title="Apply for Loan"
+                onClick={() => navigate('/apply-loan')}
+                size="large"
+              />
+              <GridCard
+                icon={CreditCard}
+                title="My Loans"
+                onClick={() => navigate('/loan-management')}
+                size="large"
+              />
+              <GridCard
+                icon={Brain}
+                title="Adaptive Credit"
+                onClick={() => navigate('/adaptive-credit')}
+                size="large"
+              />
+              <GridCard
+                icon={Shield}
+                title="Blockchain Lending"
+                onClick={() => navigate('/blockchain-lending')}
+                size="large"
+              />
+            </div>
+          </div>
+        );
+
+      case 'ANALYTICS':
+        return (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-center">Analytics Dashboard</h2>
+            <div className="grid grid-cols-1 gap-4">
+              <GridCard
+                icon={BarChart3}
+                title="Analytics Overview"
+                subtitle="View all metrics"
+                onClick={() => navigate('/analytics')}
+                size="large"
+              />
+              <GridCard
+                icon={PieChart}
+                title="Financial Reports"
+                subtitle="Detailed insights"
+                onClick={() => navigate('/reports-statements')}
+                size="large"
+              />
+              <GridCard
+                icon={TrendingUp}
+                title="Performance Metrics"
+                subtitle="Track progress"
+                onClick={() => navigate('/performance')}
+                size="large"
+              />
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
-      <nav className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          {/* Top Header with Global Elements */}
-          <div className="flex items-center justify-between h-16">
-            {/* Left: Search Bar */}
-            <div className="flex items-center">
-              <SearchBar />
-            </div>
+      <div className="min-h-screen bg-background">
+        {/* Top Search Bar */}
+        <div className="bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-3">
+            <SearchBar />
+          </div>
+        </div>
 
-            {/* Center: Brand Logo */}
-            <div 
-              className="font-bold text-xl bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => navigate('/')}
-            >
-              ChamaVault
-            </div>
-
-            {/* Right: Global UI Elements */}
-            <div className="flex items-center space-x-2">
-              <LanguageSelector />
-              <ThemeToggle />
+        {/* Secondary Header with Global Controls */}
+        <div className="bg-muted/20 border-b">
+          <div className="container mx-auto px-4 py-3">
+            <div className="flex items-center justify-center space-x-6">
+              <div className="flex items-center space-x-1">
+                <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
+                  <span className="text-xs">🌐</span>
+                </div>
+                <LanguageSelector />
+              </div>
               
-              {user ? (
-                <div className="flex items-center space-x-2">
-                  {/* Notification Bell */}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setNotificationOpen(true)}
-                    className="relative h-9 w-9"
-                  >
-                    <Bell className="h-4 w-4" />
-                    {unreadCount > 0 && (
-                      <Badge 
-                        variant="destructive" 
-                        className="absolute -top-1 -right-1 h-5 w-5 text-xs flex items-center justify-center p-0"
-                      >
-                        {unreadCount > 9 ? '9+' : unreadCount}
-                      </Badge>
-                    )}
-                  </Button>
-                  
-                  {/* User Profile */}
-                  <div className="flex items-center space-x-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="" />
-                      <AvatarFallback className="bg-primary text-primary-foreground">
+              <div className="flex items-center space-x-1">
+                <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                  <span className="text-xs">🎨</span>
+                </div>
+                <ThemeToggle />
+              </div>
+
+              {user && (
+                <>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
+                      <Bell className="h-3 w-3 text-white" />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setNotificationOpen(true)}
+                      className="text-sm"
+                    >
+                      Notification
+                      {unreadCount > 0 && (
+                        <Badge variant="destructive" className="ml-1 h-4 w-4 text-xs p-0">
+                          {unreadCount}
+                        </Badge>
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="flex items-center space-x-1">
+                    <Avatar className="h-6 w-6">
+                      <AvatarFallback className="bg-purple-500 text-white text-xs">
                         {user.email?.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="text-sm font-medium hidden sm:block">
-                      {user.email?.split('@')[0]}
-                    </span>
+                    <span className="text-sm">Profile</span>
                   </div>
+                </>
+              )}
 
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleSignOut}
-                    className="h-9 w-9"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
+              {!user && (
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setAuthModalOpen(true)}
-                  className="h-9"
                 >
-                  {t('nav.signIn', 'Sign In')}
+                  Sign In
                 </Button>
               )}
             </div>
           </div>
+        </div>
 
-          {/* Navigation Sections */}
-          {user && (
-            <div className="space-y-4 pb-4">
-              {/* Top Section - 4 Tabs */}
-              <div className="flex justify-center">
-                <div className="flex items-center space-x-1 bg-muted/50 rounded-lg p-1">
-                  <Button
-                    variant={isActive('/') ? "default" : "ghost"}
-                    onClick={() => navigate('/')}
-                    className="h-9"
-                  >
-                    <Home className="h-4 w-4 mr-2" />
-                    Home
-                  </Button>
+        {/* Main Content Area */}
+        {user && (
+          <div className="container mx-auto px-4 py-6 pb-24">
+            {renderContent()}
+          </div>
+        )}
 
-                  {/* AI Navigator with Dropdown */}
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      <NavigationMenuItem>
-                        <NavigationMenuTrigger className={`h-9 ${isActive('/financial-navigator') ? 'bg-primary text-primary-foreground' : ''}`}>
-                          <Brain className="h-4 w-4 mr-2" />
-                          AI Navigator
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <div className="grid w-[300px] gap-2 p-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/financial-navigator')}
-                              className="justify-start h-8"
-                            >
-                              <Target className="mr-2 h-4 w-4" />
-                              Dashboard
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/cash-flow-predictor')}
-                              className="justify-start h-8"
-                            >
-                              <TrendingUp className="mr-2 h-4 w-4" />
-                              Cash Flow Predictor
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/financial-health')}
-                              className="justify-start h-8"
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Health Score
-                            </Button>
-                          </div>
-                        </NavigationMenuContent>
-                      </NavigationMenuItem>
-                    </NavigationMenuList>
-                  </NavigationMenu>
+        {/* Guest Content */}
+        {!user && (
+          <div className="container mx-auto px-4 py-12 text-center">
+            <h1 className="text-3xl font-bold mb-4">Welcome to ChamaVault</h1>
+            <p className="text-muted-foreground mb-8">Your complete financial management platform</p>
+            <Button onClick={() => setAuthModalOpen(true)} size="lg">
+              Get Started
+            </Button>
+          </div>
+        )}
 
-                  {/* Smart Lending with Dropdown */}
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      <NavigationMenuItem>
-                        <NavigationMenuTrigger className={`h-9 ${isActive('/adaptive-credit') ? 'bg-primary text-primary-foreground' : ''}`}>
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Smart Lending
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <div className="grid w-[300px] gap-2 p-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/adaptive-credit')}
-                              className="justify-start h-8"
-                            >
-                              <Brain className="mr-2 h-4 w-4" />
-                              Adaptive Credit Lab
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/loans')}
-                              className="justify-start h-8"
-                            >
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              Traditional Loans
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/blockchain-lending')}
-                              className="justify-start h-8"
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              DeFi Loans
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/asset-financing')}
-                              className="justify-start h-8"
-                            >
-                              <Coins className="mr-2 h-4 w-4" />
-                              Asset Financing
-                            </Button>
-                          </div>
-                        </NavigationMenuContent>
-                      </NavigationMenuItem>
-                    </NavigationMenuList>
-                  </NavigationMenu>
+        {/* Bottom Navigation */}
+        {user && (
+          <div className="fixed bottom-0 left-0 right-0 bg-background border-t z-50">
+            <div className="flex items-center justify-center">
+              <div className="flex items-center space-x-1 py-2">
+                <Button
+                  variant={activeTab === 'HOME' ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab('HOME');
+                    navigate('/');
+                  }}
+                  className="flex flex-col items-center px-4 h-12"
+                >
+                  <Home className="h-4 w-4" />
+                  <span className="text-xs mt-1">HOME</span>
+                </Button>
 
-                  {/* Smart Wallet with Dropdown */}
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      <NavigationMenuItem>
-                        <NavigationMenuTrigger className={`h-9 ${isActive('/smart-wallet') ? 'bg-primary text-primary-foreground' : ''}`}>
-                          <Wallet className="h-4 w-4 mr-2" />
-                          Smart Wallet
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <div className="grid w-[300px] gap-2 p-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/smart-wallet')}
-                              className="justify-start h-8"
-                            >
-                              <Wallet className="mr-2 h-4 w-4" />
-                              Smart Wallet
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/mobile-money')}
-                              className="justify-start h-8"
-                            >
-                              <Smartphone className="mr-2 h-4 w-4" />
-                              Mobile Money
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/personal-savings')}
-                              className="justify-start h-8"
-                            >
-                              <Coins className="mr-2 h-4 w-4" />
-                              Personal Savings
-                            </Button>
-                          </div>
-                        </NavigationMenuContent>
-                      </NavigationMenuItem>
-                    </NavigationMenuList>
-                  </NavigationMenu>
-                </div>
-              </div>
+                <Button
+                  variant={activeTab === 'CHAMA' || activeTab === 'ADVANCED_CHAMA' ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab('CHAMA');
+                    navigate('/chamas');
+                  }}
+                  className="flex flex-col items-center px-4 h-12"
+                >
+                  <Users className="h-4 w-4" />
+                  <span className="text-xs mt-1">CHAMA</span>
+                </Button>
 
-              {/* Middle Section - 4 Tabs */}
-              <div className="flex justify-center">
-                <div className="flex items-center space-x-1 bg-muted/50 rounded-lg p-1">
-                  {/* Chamas with Dropdown */}
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      <NavigationMenuItem>
-                        <NavigationMenuTrigger className={`h-9 ${isActive('/chamas') ? 'bg-primary text-primary-foreground' : ''}`}>
-                          <Users className="h-4 w-4 mr-2" />
-                          Chamas
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <div className="grid w-[300px] gap-2 p-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/chamas')}
-                              className="justify-start h-8"
-                            >
-                              <Users className="mr-2 h-4 w-4" />
-                              My Chamas
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/available-chamas')}
-                              className="justify-start h-8"
-                            >
-                              <BookOpen className="mr-2 h-4 w-4" />
-                              Available Chamas
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/create-chama')}
-                              className="justify-start h-8"
-                            >
-                              <Plus className="mr-2 h-4 w-4" />
-                              Create Chama
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/join-chama')}
-                              className="justify-start h-8"
-                            >
-                              <Users className="mr-2 h-4 w-4" />
-                              Join Chama
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/advanced-chama')}
-                              className="justify-start h-8"
-                            >
-                              <Settings className="mr-2 h-4 w-4" />
-                              Advanced Features
-                            </Button>
-                          </div>
-                        </NavigationMenuContent>
-                      </NavigationMenuItem>
-                    </NavigationMenuList>
-                  </NavigationMenu>
+                <Button
+                  variant={activeTab === 'WALLET' ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab('WALLET');
+                    navigate('/smart-wallet');
+                  }}
+                  className="flex flex-col items-center px-4 h-12"
+                >
+                  <Wallet className="h-4 w-4" />
+                  <span className="text-xs mt-1">WALLET</span>
+                </Button>
 
-                  {/* Trading with Dropdown */}
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      <NavigationMenuItem>
-                        <NavigationMenuTrigger className={`h-9 ${isActive('/p2p-trading') ? 'bg-primary text-primary-foreground' : ''}`}>
-                          <ArrowLeftRight className="h-4 w-4 mr-2" />
-                          Trading
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <div className="grid w-[300px] gap-2 p-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/p2p-trading')}
-                              className="justify-start h-8"
-                            >
-                              <ArrowLeftRight className="mr-2 h-4 w-4" />
-                              P2P Trading
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/staking')}
-                              className="justify-start h-8"
-                            >
-                              <Coins className="mr-2 h-4 w-4" />
-                              Staking
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/investments')}
-                              className="justify-start h-8"
-                            >
-                              <TrendingUp className="mr-2 h-4 w-4" />
-                              Investments
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/mobile-money')}
-                              className="justify-start h-8"
-                            >
-                              <Smartphone className="mr-2 h-4 w-4" />
-                              Mobile Money
-                            </Button>
-                          </div>
-                        </NavigationMenuContent>
-                      </NavigationMenuItem>
-                    </NavigationMenuList>
-                  </NavigationMenu>
+                <Button
+                  variant={activeTab === 'LOANS' ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab('LOANS');
+                    navigate('/apply-loan');
+                  }}
+                  className="flex flex-col items-center px-4 h-12"
+                >
+                  <CreditCard className="h-4 w-4" />
+                  <span className="text-xs mt-1">LOANS</span>
+                </Button>
 
-                  <Button
-                    variant={isActive('/analytics') ? "default" : "ghost"}
-                    onClick={() => navigate('/analytics')}
-                    className="h-9"
-                  >
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    Analytics
-                  </Button>
-
-                  {/* Community with Dropdown */}
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      <NavigationMenuItem>
-                        <NavigationMenuTrigger className={`h-9 ${isActive('/community-hub') ? 'bg-primary text-primary-foreground' : ''}`}>
-                          <MessageSquare className="h-4 w-4 mr-2" />
-                          Community
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <div className="grid w-[300px] gap-2 p-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/community-hub')}
-                              className="justify-start h-8"
-                            >
-                              <MessageSquare className="mr-2 h-4 w-4" />
-                              Community Hub
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/voting-system')}
-                              className="justify-start h-8"
-                            >
-                              <Vote className="mr-2 h-4 w-4" />
-                              Voting System
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/financial-navigator')}
-                              className="justify-start h-8"
-                            >
-                              <Target className="mr-2 h-4 w-4" />
-                              Financial Navigator
-                            </Button>
-                          </div>
-                        </NavigationMenuContent>
-                      </NavigationMenuItem>
-                    </NavigationMenuList>
-                  </NavigationMenu>
-                </div>
-              </div>
-
-              {/* Bottom Section - 4 Tabs */}
-              <div className="flex justify-center">
-                <div className="flex items-center space-x-1 bg-muted/50 rounded-lg p-1">
-                  <Button
-                    variant={isActive('/admin-portal') ? "default" : "ghost"}
-                    onClick={() => navigate('/admin-portal')}
-                    className="h-9"
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Admin Portal
-                  </Button>
-
-                  <Button
-                    variant={isActive('/bank-portal') ? "default" : "ghost"}
-                    onClick={() => navigate('/bank-portal')}
-                    className="h-9"
-                  >
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Bank Portal
-                  </Button>
-
-                  {/* Loan Management with Dropdown */}
-                  <NavigationMenu>
-                    <NavigationMenuList>
-                      <NavigationMenuItem>
-                        <NavigationMenuTrigger className={`h-9 ${isActive('/apply-loan') ? 'bg-primary text-primary-foreground' : ''}`}>
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Loan Management
-                        </NavigationMenuTrigger>
-                        <NavigationMenuContent>
-                          <div className="grid w-[300px] gap-2 p-3">
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/apply-loan')}
-                              className="justify-start h-8"
-                            >
-                              <Plus className="mr-2 h-4 w-4" />
-                              Apply for Loan
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/loan-management')}
-                              className="justify-start h-8"
-                            >
-                              <CreditCard className="mr-2 h-4 w-4" />
-                              My Loans
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/adaptive-credit')}
-                              className="justify-start h-8"
-                            >
-                              <Brain className="mr-2 h-4 w-4" />
-                              Adaptive Credit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => navigate('/blockchain-lending')}
-                              className="justify-start h-8"
-                            >
-                              <Shield className="mr-2 h-4 w-4" />
-                              Blockchain Lending
-                            </Button>
-                          </div>
-                        </NavigationMenuContent>
-                      </NavigationMenuItem>
-                    </NavigationMenuList>
-                  </NavigationMenu>
-
-                  <Button
-                    variant={isActive('/smart-finance') ? "default" : "ghost"}
-                    onClick={() => navigate('/smart-finance')}
-                    className="h-9"
-                  >
-                    <Brain className="h-4 w-4 mr-2" />
-                    Smart Finance
-                  </Button>
-                </div>
-              </div>
-
-              {/* Quick Links Section */}
-              <div className="flex justify-center">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <span>Quick Links:</span>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => navigate('/trivia-game')}
-                    className="h-6 px-2"
-                  >
-                    <GamepadIcon className="h-3 w-3 mr-1" />
-                    Trivia Game
-                  </Button>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => navigate('/make-contribution')}
-                    className="h-6 px-2"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Make Contribution
-                  </Button>
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => navigate('/partner-dashboard')}
-                    className="h-6 px-2"
-                  >
-                    <Building2 className="h-3 w-3 mr-1" />
-                    Partner Dashboard
-                  </Button>
-                </div>
+                <Button
+                  variant={activeTab === 'ANALYTICS' ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => {
+                    setActiveTab('ANALYTICS');
+                    navigate('/analytics');
+                  }}
+                  className="flex flex-col items-center px-4 h-12"
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="text-xs mt-1">ANALYTICS</span>
+                </Button>
               </div>
             </div>
-          )}
-        </div>
-      </nav>
+          </div>
+        )}
+      </div>
       
       <AuthModal 
         open={authModalOpen} 

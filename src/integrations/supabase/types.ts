@@ -1033,7 +1033,7 @@ export type Database = {
           {
             foreignKeyName: "chama_metrics_chama_id_fkey"
             columns: ["chama_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "chamas"
             referencedColumns: ["id"]
           },

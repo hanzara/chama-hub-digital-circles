@@ -48,8 +48,10 @@ export const useInvitations = (chamaId: string) => {
 
       if (error) throw error;
 
-      // If phone number is provided, send SMS
-      if (phoneNumber) {
+      let notificationSent = false;
+      
+      // If phone number or email is provided, try to send notification
+      if (phoneNumber || email) {
         // Get chama details
         const { data: chamaData } = await supabase
           .from('chamas')
@@ -64,38 +66,28 @@ export const useInvitations = (chamaId: string) => {
           .eq('id', invitationId)
           .single();
 
-        // Get inviter name
-        const { data: profileData } = await supabase
-          .from('user_profiles_enhanced')
-          .select('full_name')
-          .eq('user_id', user?.id)
-          .single();
-
         if (invitationData?.invitation_token) {
-          // Send SMS via edge function
-          const { error: smsError } = await supabase.functions.invoke('send-sms-invitation', {
-            body: {
-              phoneNumber,
-              chamaName: chamaData?.name || 'a chama',
-              invitationToken: invitationData.invitation_token,
-              inviterName: profileData?.full_name || undefined,
-            },
-          });
-
-          if (smsError) {
-            console.error('Failed to send SMS:', smsError);
-            // Don't throw error, invitation was created successfully
+          const inviteLink = `${window.location.origin}/join-chama?token=${invitationData.invitation_token}`;
+          
+          // For now, just copy the link to clipboard as SMS/Email aren't configured
+          try {
+            await navigator.clipboard.writeText(inviteLink);
+            notificationSent = true;
+          } catch (clipboardError) {
+            console.error('Failed to copy to clipboard:', clipboardError);
           }
         }
       }
 
-      return invitationId;
+      return { invitationId, notificationSent };
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['invitations', chamaId] });
       toast({
-        title: 'Invitation sent',
-        description: 'The invitation has been created successfully',
+        title: 'Invitation created',
+        description: data?.notificationSent 
+          ? 'Invitation link copied to clipboard. Share it with the member.' 
+          : 'Invitation created. Share the link from the invitations list.',
       });
     },
     onError: (error: any) => {

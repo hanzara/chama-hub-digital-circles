@@ -3,13 +3,14 @@ import { useToast } from './use-toast';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-interface Invitation {
+export interface Invitation {
   id: string;
   email?: string | null;
   phone_number?: string | null;
+  full_name?: string | null;
   created_at: string;
   expires_at?: string | null;
-  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  status: 'pending' | 'pending_approval' | 'accepted' | 'rejected' | 'expired';
   role?: string | null;
   invitation_token?: string | null;
 }
@@ -25,7 +26,7 @@ export const useInvitations = (chamaId: string) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('member_invitations')
-        .select('id, email, phone_number, created_at, expires_at, status, role, invitation_token')
+        .select('id, email, phone_number, full_name, created_at, expires_at, status, role, invitation_token')
         .eq('chama_id', chamaId)
         .order('created_at', { ascending: false });
 
@@ -125,12 +126,78 @@ export const useInvitations = (chamaId: string) => {
     },
   });
 
+  // Approve join request mutation
+  const { mutate: approveRequest, isPending: isApproving } = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { data, error } = await supabase.rpc('approve_join_request', {
+        p_invitation_id: invitationId,
+      });
+
+      if (error) throw error;
+      
+      const result = data as { success?: boolean; message?: string } | null;
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to approve request');
+      }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitations', chamaId] });
+      toast({
+        title: 'Request approved',
+        description: 'The member has been added to the chama',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to approve request',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Reject join request mutation
+  const { mutate: rejectRequest, isPending: isRejecting } = useMutation({
+    mutationFn: async (invitationId: string) => {
+      const { data, error } = await supabase.rpc('reject_join_request', {
+        p_invitation_id: invitationId,
+      });
+
+      if (error) throw error;
+      
+      const result = data as { success?: boolean; message?: string } | null;
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to reject request');
+      }
+      return result;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invitations', chamaId] });
+      toast({
+        title: 'Request rejected',
+        description: 'The join request has been rejected',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to reject request',
+        variant: 'destructive',
+      });
+    },
+  });
+
   return {
     invitations,
     isLoading,
     createInvitation,
     isCreating,
     revokeInvitation,
+    approveRequest,
+    isApproving,
+    rejectRequest,
+    isRejecting,
   };
 };
 

@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, Users, Mail, Copy, Check, Phone, Link as LinkIcon, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-import { useInvitations } from '@/hooks/useInvitations';
+import { useInvitations, type Invitation } from '@/hooks/useInvitations';
 import Navigation from '@/components/Navigation';
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -16,27 +16,26 @@ const InviteMembersPage = () => {
   const navigate = useNavigate();
   const { id: chamaId } = useParams();
   const { toast } = useToast();
-  const { invitations, createInvitation, isCreating, revokeInvitation } = useInvitations(chamaId || '');
+  const { invitations, createInvitation, isCreating, revokeInvitation, approveRequest, rejectRequest } = useInvitations(chamaId || '');
   
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [role, setRole] = useState<string>('member');
-  const [invitationMethod, setInvitationMethod] = useState<'email' | 'phone'>('email');
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
 
-  const handleInviteByEmail = (e: React.FormEvent) => {
+  const handleCreateInvite = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      createInvitation({ email, role });
-      setEmail('');
+    // Just create the invitation, no email/phone needed upfront
+    createInvitation({ role });
+  };
+
+  const handleApprove = (invitationId: string) => {
+    if (confirm('Approve this join request?')) {
+      approveRequest(invitationId);
     }
   };
 
-  const handleInviteByPhone = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (phoneNumber) {
-      createInvitation({ phoneNumber, role });
-      setPhoneNumber('');
+  const handleReject = (invitationId: string) => {
+    if (confirm('Reject this join request?')) {
+      rejectRequest(invitationId);
     }
   };
 
@@ -66,10 +65,12 @@ const InviteMembersPage = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: Invitation['status']) => {
     switch (status) {
       case 'pending':
         return <Badge variant="secondary">Pending</Badge>;
+      case 'pending_approval':
+        return <Badge className="bg-amber-500">Awaiting Approval</Badge>;
       case 'accepted':
         return <Badge variant="default">Accepted</Badge>;
       case 'rejected':
@@ -106,167 +107,154 @@ const InviteMembersPage = () => {
           </div>
 
           <div className="space-y-6">
-            {/* Invitation Method Selection */}
+            {/* Generate Invitation Link */}
             <Card>
               <CardHeader>
-                <CardTitle>Choose Invitation Method</CardTitle>
+                <CardTitle>Generate Invitation Link</CardTitle>
                 <CardDescription>
-                  Select how you want to invite new members
+                  Create a shareable link for new members to request to join
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex gap-4 mb-4">
-                  <Button
-                    variant={invitationMethod === 'email' ? 'default' : 'outline'}
-                    onClick={() => setInvitationMethod('email')}
-                    className="flex items-center gap-2"
-                  >
-                    <Mail className="h-4 w-4" />
-                    Email
+                <form onSubmit={handleCreateInvite} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Default Role</Label>
+                    <Select value={role} onValueChange={setRole}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="member">Member</SelectItem>
+                        <SelectItem value="treasurer">Treasurer</SelectItem>
+                        <SelectItem value="secretary">Secretary</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" disabled={isCreating} className="w-full">
+                    {isCreating ? 'Generating Link...' : 'Generate Invitation Link'}
                   </Button>
-                  <Button
-                    variant={invitationMethod === 'phone' ? 'default' : 'outline'}
-                    onClick={() => setInvitationMethod('phone')}
-                    className="flex items-center gap-2"
-                  >
-                    <Phone className="h-4 w-4" />
-                    Phone
-                  </Button>
-                </div>
-
-                {invitationMethod === 'email' ? (
-                  <form onSubmit={handleInviteByEmail} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email Address</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="friend@example.com"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="role">Role</Label>
-                      <Select value={role} onValueChange={setRole}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="treasurer">Treasurer</SelectItem>
-                          <SelectItem value="secretary">Secretary</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button type="submit" disabled={isCreating} className="w-full">
-                      {isCreating ? 'Creating Invitation...' : 'Create Email Invitation'}
-                    </Button>
-                  </form>
-                ) : (
-                  <form onSubmit={handleInviteByPhone} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="0712345678"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="role-phone">Role</Label>
-                      <Select value={role} onValueChange={setRole}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="member">Member</SelectItem>
-                          <SelectItem value="treasurer">Treasurer</SelectItem>
-                          <SelectItem value="secretary">Secretary</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <Button type="submit" disabled={isCreating} className="w-full">
-                      {isCreating ? 'Creating Invitation...' : 'Create Phone Invitation'}
-                    </Button>
-                  </form>
-                )}
+                </form>
               </CardContent>
             </Card>
 
-            {/* Recent Invitations */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Invitations</CardTitle>
-                <CardDescription>
-                  Track your sent invitations
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {invitations.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-4">
-                    No invitations sent yet
-                  </p>
-                ) : (
+            {/* Pending Approval Requests */}
+            {invitations.some((inv: Invitation) => inv.status === 'pending_approval') && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pending Approval Requests</CardTitle>
+                  <CardDescription>
+                    Members waiting for your approval
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-3">
-                    {invitations.map((invitation) => (
-                      <div key={invitation.id} className="flex justify-between items-start p-4 bg-muted/50 rounded-lg border">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-medium">
-                              {invitation.email || invitation.phone_number}
-                            </p>
-                            {invitation.role && invitation.role !== 'member' && (
-                              <Badge variant="outline" className="text-xs">
-                                {invitation.role}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Sent {formatDate(invitation.created_at)}
-                            {invitation.expires_at && (
-                              <span> • Expires {formatDate(invitation.expires_at)}</span>
-                            )}
-                          </p>
-                          {invitation.status === 'pending' && (
-                            <div className="flex gap-2">
+                    {invitations
+                      .filter((inv: Invitation) => inv.status === 'pending_approval')
+                      .map((invitation: any) => (
+                        <div key={invitation.id} className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="font-semibold text-lg">{invitation.full_name}</p>
+                              <div className="text-sm text-muted-foreground space-y-1 mt-1">
+                                <p>📧 {invitation.email}</p>
+                                <p>📱 {invitation.phone_number}</p>
+                                <p className="text-xs mt-2">Requested {formatDate(invitation.created_at)}</p>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 ml-4">
                               <Button
                                 size="sm"
-                                variant="outline"
-                                onClick={() => copyInviteLink(invitation.id, invitation.invitation_token)}
+                                onClick={() => handleApprove(invitation.id)}
+                                className="bg-green-600 hover:bg-green-700"
                               >
-                                {copiedToken === invitation.id ? (
-                                  <>
-                                    <Check className="h-3 w-3 mr-1" />
-                                    Copied
-                                  </>
-                                ) : (
-                                  <>
-                                    <LinkIcon className="h-3 w-3 mr-1" />
-                                    Copy Link
-                                  </>
-                                )}
+                                <Check className="h-3 w-3 mr-1" />
+                                Approve
                               </Button>
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => handleRevoke(invitation.id)}
+                                onClick={() => handleReject(invitation.id)}
                               >
                                 <X className="h-3 w-3 mr-1" />
-                                Revoke
+                                Reject
                               </Button>
                             </div>
-                          )}
+                          </div>
                         </div>
-                        <div>
-                          {getStatusBadge(invitation.status)}
+                      ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Recent Invitations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Invitation Links</CardTitle>
+                <CardDescription>
+                  Share these links with potential members
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {invitations.filter(inv => inv.status === 'pending' || inv.status === 'accepted').length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">
+                    No invitations yet
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {invitations
+                      .filter(inv => inv.status === 'pending' || inv.status === 'accepted')
+                      .map((invitation) => (
+                        <div key={invitation.id} className="flex justify-between items-start p-4 bg-muted/50 rounded-lg border">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              {invitation.role && invitation.role !== 'member' && (
+                                <Badge variant="outline" className="text-xs">
+                                  {invitation.role} role
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mb-2">
+                              Created {formatDate(invitation.created_at)}
+                              {invitation.expires_at && (
+                                <span> • Expires {formatDate(invitation.expires_at)}</span>
+                              )}
+                            </p>
+                            {invitation.status === 'pending' && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => copyInviteLink(invitation.id, invitation.invitation_token)}
+                                >
+                                  {copiedToken === invitation.id ? (
+                                    <>
+                                      <Check className="h-3 w-3 mr-1" />
+                                      Copied
+                                    </>
+                                  ) : (
+                                    <>
+                                      <LinkIcon className="h-3 w-3 mr-1" />
+                                      Copy Link
+                                    </>
+                                  )}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleRevoke(invitation.id)}
+                                >
+                                  <X className="h-3 w-3 mr-1" />
+                                  Revoke
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            {getStatusBadge(invitation.status)}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
                 )}
               </CardContent>

@@ -82,39 +82,27 @@ const JoinChamaPage = () => {
     setIsLoading(true);
 
     try {
-      // First, check if invitation is still valid
-      const { data: invitation, error: inviteError } = await supabase
-        .from('member_invitations')
-        .select('id, chama_id, email, phone_number, status')
-        .eq('invitation_token', invitationToken)
-        .single();
+      // Call the backend function to submit join request
+      const { data, error } = await supabase.rpc('submit_join_request', {
+        p_invitation_token: invitationToken,
+        p_full_name: formData.full_name,
+        p_email: formData.email,
+        p_phone_number: formData.phone_number,
+      });
 
-      if (inviteError || !invitation) {
-        throw new Error('Invalid or expired invitation');
+      if (error) throw error;
+
+      const result = data as { success?: boolean; message?: string } | null;
+      if (result?.success === false) {
+        throw new Error(result?.message || 'Failed to submit join request');
       }
-
-      if (invitation.status !== 'pending') {
-        throw new Error('This invitation has already been used');
-      }
-
-      // Update the invitation with user details
-      const { error: updateError } = await supabase
-        .from('member_invitations')
-        .update({
-          email: formData.email,
-          phone_number: formData.phone_number,
-          status: 'pending_approval', // Changed from 'pending' to indicate form submitted
-        })
-        .eq('id', invitation.id);
-
-      if (updateError) throw updateError;
 
       toast({
         title: 'Request Submitted!',
-        description: 'Your request to join has been sent to the admin for approval. You\'ll be notified once approved.',
+        description: result?.message || 'Your request to join has been sent to the admin for approval.',
       });
 
-      // Redirect to success page or home
+      // Redirect to home
       setTimeout(() => navigate('/'), 2000);
     } catch (error: any) {
       console.error('Error submitting join request:', error);

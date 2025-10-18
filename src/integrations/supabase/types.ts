@@ -3709,6 +3709,7 @@ export type Database = {
           created_at: string
           email: string | null
           expires_at: string
+          full_name: string | null
           id: string
           invitation_token: string
           invited_by: string
@@ -3718,6 +3719,7 @@ export type Database = {
           role: string | null
           status: string
           token: string | null
+          user_id: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -3725,6 +3727,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           expires_at?: string
+          full_name?: string | null
           id?: string
           invitation_token?: string
           invited_by: string
@@ -3734,6 +3737,7 @@ export type Database = {
           role?: string | null
           status?: string
           token?: string | null
+          user_id?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -3741,6 +3745,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           expires_at?: string
+          full_name?: string | null
           id?: string
           invitation_token?: string
           invited_by?: string
@@ -3750,6 +3755,7 @@ export type Database = {
           role?: string | null
           status?: string
           token?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -7860,6 +7866,10 @@ export type Database = {
         Args: { member_id_to_approve: string }
         Returns: undefined
       }
+      approve_join_request: {
+        Args: { p_invitation_id: string }
+        Returns: Json
+      }
       are_funds_locked: {
         Args: { p_chama_id: string }
         Returns: boolean
@@ -8314,6 +8324,10 @@ export type Database = {
         Args: { member_id_to_reject: string }
         Returns: undefined
       }
+      reject_join_request: {
+        Args: { p_invitation_id: string }
+        Returns: Json
+      }
       respond_to_lending_offer: {
         Args: { p_offer_id: string; p_response: string; p_user_pin: string }
         Returns: Json
@@ -8346,6 +8360,15 @@ export type Database = {
       }
       set_user_pin_enhanced: {
         Args: { p_pin: string; p_user_id: string }
+        Returns: Json
+      }
+      submit_join_request: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_invitation_token: string
+          p_phone_number: string
+        }
         Returns: Json
       }
       toggle_chama_fund_lock: {

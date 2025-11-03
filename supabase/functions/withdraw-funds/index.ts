@@ -30,14 +30,18 @@ serve(async (req) => {
       );
     }
 
-    const { amount, paymentMethod, destinationDetails, fee = 0 } = await req.json();
+    const { amount, paymentMethod, destinationDetails } = await req.json();
 
-    console.log('Withdrawal request:', { userId: user.id, amount, paymentMethod, destinationDetails, fee });
+    console.log('Withdrawal request:', { userId: user.id, amount, paymentMethod, destinationDetails });
 
     // Validate input
-    if (!amount || amount <= 0) {
+    if (!amount || typeof amount !== 'number' || amount <= 0) {
       return new Response(
-        JSON.stringify({ error: 'Invalid amount' }),
+        JSON.stringify({ 
+          error: 'Please enter a valid withdrawal amount',
+          success: false,
+          code: 'invalid_amount' 
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -98,8 +102,44 @@ serve(async (req) => {
       );
     }
 
-    // Calculate net amount after fee
+    // Calculate fee based on payment method (backend calculation)
+    const calculateFee = (amt: number, method: string): number => {
+      switch (method) {
+        case 'mpesa':
+          if (amt <= 100) return 0;
+          if (amt <= 2500) return 15;
+          if (amt <= 3500) return 25;
+          if (amt <= 5000) return 30;
+          if (amt <= 7500) return 45;
+          if (amt <= 10000) return 50;
+          return Math.max(50, Math.floor(amt * 0.005));
+        case 'airtel':
+          if (amt <= 100) return 0;
+          if (amt <= 2500) return 15;
+          if (amt <= 5000) return 30;
+          return Math.max(50, Math.floor(amt * 0.005));
+        case 'bank':
+          return Math.max(25, Math.floor(amt * 0.001));
+        default:
+          return 0;
+      }
+    };
+
+    const fee = calculateFee(amount, paymentMethod);
     const netAmount = amount - fee;
+    
+    // Validate that net amount is positive
+    if (netAmount <= 0) {
+      return new Response(
+        JSON.stringify({ 
+          error: `Withdrawal amount too low. Minimum amount after fees: KES ${fee + 1}`,
+          success: false,
+          code: 'amount_too_low',
+          fee
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
     
     console.log('Starting Paystack transfer:', {
       paymentMethod,

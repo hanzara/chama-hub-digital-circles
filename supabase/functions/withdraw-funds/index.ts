@@ -148,6 +148,49 @@ serve(async (req) => {
       netAmount,
       phone: destinationDetails.phone_number
     });
+
+    // Check Paystack balance before attempting transfer
+    console.log('Checking Paystack balance...');
+    try {
+      const balanceResponse = await fetch('https://api.paystack.co/balance', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${paystackSecretKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (balanceResponse.ok) {
+        const balanceData = await balanceResponse.json();
+        if (balanceData.status && balanceData.data) {
+          const paystackBalance = balanceData.data[0]?.balance || 0; // Balance in kobo
+          const paystackBalanceKES = paystackBalance / 100; // Convert to KES
+          const requiredAmount = netAmount;
+          
+          console.log('Paystack balance check:', { 
+            paystackBalanceKES, 
+            requiredAmount,
+            sufficient: paystackBalanceKES >= requiredAmount 
+          });
+
+          if (paystackBalanceKES < requiredAmount) {
+            return new Response(
+              JSON.stringify({ 
+                error: 'Withdrawal service temporarily unavailable. Our team has been notified. Please try again later or contact support.',
+                success: false,
+                code: 'service_unavailable'
+              }),
+              { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        }
+      } else {
+        console.warn('Could not check Paystack balance, proceeding with transfer');
+      }
+    } catch (balanceError) {
+      console.error('Balance check error:', balanceError);
+      // Continue with transfer if balance check fails (don't block user unnecessarily)
+    }
     
     // Create/get transfer recipient first
     let recipientCode;
@@ -384,16 +427,18 @@ serve(async (req) => {
       
       // Handle specific Paystack errors with user-friendly messages
       let errorMessage = transferData.message || 'Transfer failed';
+      let errorCode = transferData.code;
       
       if (transferData.code === 'insufficient_balance' || errorMessage.toLowerCase().includes('balance is not enough')) {
-        errorMessage = 'Service temporarily unavailable. Please try again later or contact support.';
+        errorMessage = 'Withdrawal service temporarily unavailable. Our team has been notified. Please try again later or contact support.';
+        errorCode = 'service_unavailable';
       }
       
       return new Response(
         JSON.stringify({ 
           error: errorMessage,
           success: false,
-          code: transferData.code
+          code: errorCode
         }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

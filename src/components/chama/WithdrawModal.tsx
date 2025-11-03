@@ -139,7 +139,6 @@ export const WithdrawModal: React.FC<WithdrawModalProps> = ({
             amount: amountNum,
             paymentMethod,
             destinationDetails,
-            fee: withdrawalFee,
           }
         });
 

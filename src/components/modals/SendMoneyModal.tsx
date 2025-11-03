@@ -336,7 +336,6 @@ export const SendMoneyModal: React.FC<SendMoneyModalProps> = ({
               destinationDetails: {
                 phone_number: formattedPhone,
               },
-              fee,
             }
           });
 

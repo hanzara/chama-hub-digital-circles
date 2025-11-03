@@ -91,14 +91,23 @@ serve(async (req) => {
     // Call Paystack Transfer API for withdrawal
     const paystackSecretKey = Deno.env.get('PAYSTACK_SECRET_KEY');
     if (!paystackSecretKey) {
+      console.error('PAYSTACK_SECRET_KEY not configured');
       return new Response(
-        JSON.stringify({ error: 'Payment service not configured' }),
+        JSON.stringify({ error: 'Payment service not configured', success: false }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // Calculate net amount after fee
     const netAmount = amount - fee;
+    
+    console.log('Starting Paystack transfer:', {
+      paymentMethod,
+      amount,
+      fee,
+      netAmount,
+      phone: destinationDetails.phone_number
+    });
     
     // Create/get transfer recipient first
     let recipientCode;
@@ -112,13 +121,28 @@ serve(async (req) => {
         },
       });
 
-      const banksData = await banksResponse.json();
-      
-      if (!banksResponse.ok || !banksData.status) {
-        console.error('Failed to fetch banks:', banksData);
+      let banksData;
+      try {
+        banksData = await banksResponse.json();
+      } catch (parseError) {
+        console.error('Failed to parse banks response:', parseError);
         return new Response(
           JSON.stringify({ 
-            error: 'Failed to fetch mobile money providers',
+            error: 'Payment service error',
+            success: false 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (!banksResponse.ok || !banksData.status) {
+        console.error('Failed to fetch banks:', { 
+          status: banksResponse.status, 
+          data: banksData 
+        });
+        return new Response(
+          JSON.stringify({ 
+            error: banksData.message || 'Failed to fetch mobile money providers',
             success: false 
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -166,24 +190,45 @@ serve(async (req) => {
       console.log('Prepared phones:', { intlPhone, localPhone });
 
       async function createRecipientWithPhone(phone: string) {
-        const resp = await fetch('https://api.paystack.co/transferrecipient', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${paystackSecretKey}`,
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'mobile_money',
-            name: user.email || 'User',
-            account_number: phone,
-            bank_code: provider.code,
-            currency: 'KES',
-            metadata: { provider: paymentMethod },
-          }),
-        });
-        const data = await resp.json();
-        return { ok: resp.ok && data?.status, data, message: data?.message as string };
+        console.log('Creating recipient with phone:', phone);
+        try {
+          const resp = await fetch('https://api.paystack.co/transferrecipient', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${paystackSecretKey}`,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'mobile_money',
+              name: user.email || 'User',
+              account_number: phone,
+              bank_code: provider.code,
+              currency: 'KES',
+              metadata: { provider: paymentMethod },
+            }),
+          });
+          
+          let data;
+          try {
+            data = await resp.json();
+          } catch (parseError) {
+            console.error('Failed to parse recipient response:', parseError);
+            return { ok: false, data: null, message: 'Payment service error' };
+          }
+          
+          console.log('Recipient creation response:', {
+            ok: resp.ok,
+            status: resp.status,
+            dataStatus: data?.status,
+            message: data?.message
+          });
+          
+          return { ok: resp.ok && data?.status, data, message: data?.message as string };
+        } catch (error) {
+          console.error('Recipient creation error:', error);
+          return { ok: false, data: null, message: error instanceof Error ? error.message : 'Network error' };
+        }
       }
 
       // Try international format first, then fallback to local format if needed
@@ -239,22 +284,60 @@ serve(async (req) => {
     }
 
     // Initialize transfer
-    const transferResponse = await fetch('https://api.paystack.co/transfer', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${paystackSecretKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        source: 'balance',
-        amount: Math.round(netAmount * 100), // Convert to kobo/cents (net amount after fee)
-        recipient: recipientCode,
-        reason: `Wallet withdrawal via ${paymentMethod}`,
-        reference: `WD${Date.now()}${user.id.substring(0, 8)}`,
-      }),
+    console.log('Initiating Paystack transfer:', {
+      recipientCode,
+      netAmount,
+      amountInKobo: Math.round(netAmount * 100)
     });
+    
+    let transferResponse;
+    try {
+      transferResponse = await fetch('https://api.paystack.co/transfer', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${paystackSecretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          source: 'balance',
+          amount: Math.round(netAmount * 100), // Convert to kobo/cents (net amount after fee)
+          recipient: recipientCode,
+          reason: `Wallet withdrawal via ${paymentMethod}`,
+          reference: `WD${Date.now()}${user.id.substring(0, 8)}`,
+        }),
+      });
+    } catch (fetchError) {
+      console.error('Transfer fetch error:', fetchError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Network error. Please try again.',
+          success: false
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    const transferData = await transferResponse.json();
+    let transferData;
+    try {
+      transferData = await transferResponse.json();
+    } catch (parseError) {
+      console.error('Failed to parse transfer response:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Payment service error',
+          success: false
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Transfer response:', {
+      ok: transferResponse.ok,
+      status: transferResponse.status,
+      dataStatus: transferData?.status,
+      message: transferData?.message,
+      code: transferData?.code
+    });
 
     if (!transferResponse.ok || !transferData.status) {
       console.error('Transfer failed:', transferData);
